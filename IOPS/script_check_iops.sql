@@ -11,9 +11,9 @@
 
 
 declare @dbname nvarchar(200), @fileid int, @filetype varchar(50);
-set @dbname = '%';
-set @fileid  = -1;
-set @filetype = '%'
+set @dbname = '%';		--  '%' => ALL
+set @fileid  = -1;		--	-1  => ALL
+set @filetype = '%'		--  '%' => ALL
 
 if object_id('tempdb..#iorequests') is not null
 	drop table #iorequests
@@ -118,17 +118,39 @@ select IOReads_ps
  where type_desc like @filetype
  order by DBName desc, [file_id] asc OPTION (RECOMPILE);
 
-
 select [IOReads_ps]=SUM(IOReads_ps), [IOReads_bytes_ps]=SUM(IOReads_bytes_ps), [IOReads_MBytes_ps]=(SUM(IOReads_bytes_ps)/1048576.024), [IOWrites_ps]=SUM(IOWrites_ps), [IOWrites_bytes_ps]=SUM(IOWrites_bytes_ps), [IOWrites_MBytes_ps]=(SUM(IOWrites_bytes_ps)/1048576.024)
   from #iorequests
  where (file_id = @fileid or @fileid = -1)
  order by IOWrites_bytes_ps desc
 
-select [DBName], [IOReads_ps]=SUM(IOReads_ps), [IOReads_bytes_ps]=SUM(IOReads_bytes_ps), [IOReads_MBytes_ps]=(SUM(IOReads_bytes_ps)/1048576.024), [IOWrites_ps]=SUM(IOWrites_ps), [IOWrites_bytes_ps]=SUM(IOWrites_bytes_ps), [IOWrites_MBytes_ps]=(SUM(IOWrites_bytes_ps)/1048576.024)
+if object_id('tempdb..#iorequests_summary') is not null drop table #iorequests_summary;
+select [DBName]
+	 , [IOReads_ps]=SUM(IOReads_ps)
+	 , [IOWrites_ps]=SUM(IOWrites_ps)
+	 , [Total_IOPS_ps]=(SUM(IOReads_ps) + SUM(IOWrites_ps))
+	 --, [Read_Ratio]=(SUM(IOReads_ps)/(SUM(IOReads_ps) + SUM(IOWrites_ps)))
+	 --, [Write_Ratio]=(SUM(IOWrites_ps)/(SUM(IOReads_ps) + SUM(IOWrites_ps)))
+	 , [IOReads_bytes_ps]=SUM(IOReads_bytes_ps)
+	 , [IOReads_MBytes_ps]=(SUM(IOReads_bytes_ps)/1048576.024)
+	 , [IOWrites_bytes_ps]=SUM(IOWrites_bytes_ps)
+	 , [IOWrites_MBytes_ps]=(SUM(IOWrites_bytes_ps)/1048576.024)
+  into #iorequests_summary
   from #iorequests
  where DBName like @dbname and (file_id = @fileid or @fileid = -1)
  group by [DBName]
  order by IOWrites_bytes_ps desc
+
+select [DBName]
+	 , [IOReads_ps]
+	 , [IOWrites_ps]
+	 , [Total_IOPS_ps]
+	 , [Read_Ratio]=([IOReads_ps]/[Total_IOPS_ps])*100.000000
+	 , [Write_Ratio]=([IOWrites_ps]/[Total_IOPS_ps])*100.000000
+	 , [IOReads_bytes_ps]
+	 , [IOReads_MBytes_ps]
+	 , [IOWrites_bytes_ps]
+	 , [IOWrites_MBytes_ps]
+  from #iorequests_summary
 
 select ServerName, SecondsRunning, DBName, IOReads_ps, IOReads_bytes_ps, IOWrites_ps, IOWrites_bytes_ps, Drive, physical_name, type_desc
   from #iorequests
@@ -146,4 +168,7 @@ select [DBName], [IOReads_ps]=SUM(IOReads_ps), [IOReads_bytes_ps]=SUM(IOReads_by
  group by [DBName]
  order by IOWrites_bytes_ps desc
 
-drop table #iorequests
+
+cleanup:
+if object_id('tempdb..#iorequests') is not null drop table #iorequests
+if object_id('tempdb..#iorequests_summary') is not null drop table #iorequests_summary;
