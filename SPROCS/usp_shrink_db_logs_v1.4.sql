@@ -38,6 +38,9 @@ go
 --					To restore your log-chain, you will need to:
 --					1- switch back to full recovery
 --					2- perform a full backup
+
+-- *** Procedure is provided as-is, with no warranties expressed nor implied.  Please always test on a DEV or SANDBOX environment first. 
+
 /* Usage:		
 				exec [dbo].[usp_shrink_db_logs] @db_name 			= '%', 			-- varchar(200)
 												@search_db_recovery = '%', 			-- varchar(25)
@@ -56,7 +59,7 @@ go
    Change History:  2016-02-15  Created script
 					2017-05-17	Added @groupid ==>> data file groupid:  0 = logs, 1 = data (primary), >1 = user defined file group, -1 = "ALL"
 */
--- *** Procedure is provided as-is, with no warranties expressed nor implied.  Please always test on a DEV or SANDBOX environment first. 
+
 -- ============================================================================================================
 
 create procedure dbo.usp_shrink_db_logs (@db_name varchar(200) = '%', @search_db_recovery varchar(25) = '%', @set_db_recovery varchar(25) = 'SIMPLE', @switch_recovery bit = 0, @search_logsize_s decimal(16,2) = 1000.0, @search_logsize_e decimal(16,2) = 999999999.0, @set_logsize int = 0, @growth_size varchar(50) = '100MB', @groupid smallint = 0, @debug bit = 0) with encryption
