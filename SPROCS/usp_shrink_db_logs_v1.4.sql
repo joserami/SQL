@@ -38,9 +38,9 @@ go
 --					To restore your log-chain, you will need to:
 --					1- switch back to full recovery
 --					2- perform a full backup
-
+--
 -- *** Procedure is provided as-is, with no warranties expressed nor implied.  Please always test on a DEV or SANDBOX environment first. 
-
+--
 /* Usage:		
 				exec [dbo].[usp_shrink_db_logs] @db_name 			= '%', 			-- varchar(200)
 												@search_db_recovery = '%', 			-- varchar(25)
